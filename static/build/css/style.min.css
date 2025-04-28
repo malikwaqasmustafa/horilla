@@ -7614,7 +7614,7 @@ body {
 }
 
 .oh-link--secondary {
-  color: hsl(82, 51%, 50%);
+  color: hsl(145.95deg 98.67% 29.41%);
 }
 .oh-link--secondary:hover, .oh-link--secondary:focus, .oh-link--secondary:focus-visible {
   /*color: hsl(8, 61%, 50%);*/
@@ -8095,12 +8095,12 @@ body {
 }
 
 .oh-btn--secondary {
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   color: hsl(0, 0%, 100%);
   text-decoration: none;
 }
 .oh-btn--secondary:hover, .oh-btn--secondary:focus, .oh-btn--secondary:focus-visible {
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   color: white;
   text-decoration: none;
 }
@@ -8171,51 +8171,51 @@ body {
 
 .oh-btn--secondary-outline {
   background-color: transparent;
-  border: 1px solid hsl(82, 51%, 50%);
+  border: 1px solid hsl(145.95deg 98.67% 29.41%);
   color: hsl(8, 77%, 56%);
 }
 .oh-btn--secondary-outline:hover, .oh-btn--secondary-outline:focus, .oh-btn--secondary-outline:focus-visible {
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   color: hsl(0, 0%, 100%);
 }
 
 .oh-btn--white-outline {
   background-color: transparent;
-  border: 1px solid hsl(82, 51%, 50%);
+  border: 1px solid hsl(145.95deg 98.67% 29.41%);
   color: hsl(0, 0%, 100%);
 }
 .oh-btn--white-outline:hover, .oh-btn--white-outline:focus, .oh-btn--white-outline:focus-visible {
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   color: hsl(8, 77%, 56%);
 }
 
 .oh-btn--warning-outline {
   background-color: transparent;
-  border: 1px solid hsl(82, 51%, 50%);
+  border: 1px solid hsl(145.95deg 98.67% 29.41%);
   color: hsl(40, 91%, 60%);
 }
 .oh-btn--warning-outline:hover, .oh-btn--warning-outline:focus, .oh-btn--warning-outline:focus-visible {
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   color: hsl(0, 0%, 11%);
 }
 
 .oh-btn--success-outline {
   background-color: transparent;
-  border: 1px solid hsl(82, 51%, 50%);
+  border: 1px solid hsl(145.95deg 98.67% 29.41%);
   color: hsl(148, 71%, 44%);
 }
 .oh-btn--success-outline:hover, .oh-btn--success-outline:focus, .oh-btn--success-outline:focus-visible {
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   color: hsl(0, 0%, 100%);
 }
 
 .oh-btn--info-outline {
   background-color: transparent;
-  border: 1px solid hsl(82, 51%, 50%);
-  color: hsl(82, 51%, 50%);
+  border: 1px solid hsl(145.95deg 98.67% 29.41%);
+  color: hsl(145.95deg 98.67% 29.41%);
 }
 .oh-btn--info-outline:hover, .oh-btn--info-outline:focus, .oh-btn--info-outline:focus-visible {
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   color: hsl(0, 0%, 100%);
 }
 
@@ -10368,7 +10368,7 @@ select.oh-select--lg {
 }
 
 .oh-sidebar {
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   color: hsl(0, 0%, 100%);
   max-width: 230px;
   min-height: 100vh;
@@ -10396,7 +10396,7 @@ select.oh-select--lg {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   font-size: 1.25rem;
   border-radius: 0.15rem;
 }
@@ -10468,7 +10468,7 @@ select.oh-select--lg {
 
 .oh-sidebar__submenu {
   padding: 17px 25px;
-  background-color: hsl(82, 51%, 50%);
+  background-color: hsl(145.95deg 98.67% 29.41%);
   width: 230px;
 }
 
@@ -12246,17 +12246,17 @@ span.oh-activity-sidebar__a img {
 }
 
 .oh-general__tab-link--active {
-  border-bottom: 3px solid hsl(82, 51%, 50%);
+  border-bottom: 3px solid hsl(145.95deg 98.67% 29.41%);
 }
 @media (max-width: 575.98px) {
   .oh-general__tab-link--active {
     border-bottom: none;
     background-color: rgba(229.194, 79.4444, 56.406, 0.1);
-    color: hsl(82, 51%, 50%);
+    color: hsl(145.95deg 98.67% 29.41%);
     border-radius: 0.25rem;
   }
   .oh-general__tab-link--active:focus, .oh-general__tab-link--active:focus-visible {
-    color: hsl(82, 51%, 50%);
+    color: hsl(145.95deg 98.67% 29.41%);
   }
 }
 
