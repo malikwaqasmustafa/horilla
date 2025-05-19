@@ -203,8 +203,8 @@ DJANGO_NOTIFICATIONS_CONFIG = {
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
 LANGUAGES = (
-    ("en", "English (US)"),
-    ("fr", "France")
+    ('en', 'English'),
+    ('fr', 'French'),
 )
 
 LOCALE_PATHS = [
@@ -215,7 +215,7 @@ LOCALE_PATHS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = 'en'
 
 TIME_ZONE = env("TIME_ZONE", default="Asia/Kolkata")
 

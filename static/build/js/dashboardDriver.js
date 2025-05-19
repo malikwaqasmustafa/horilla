@@ -4,45 +4,45 @@ const driver = window.driver.js.driver;
 
 
 var steps = [
-    { popover: { title: 'Dashboard', description: 'Welcome To dashboard section' } },
-    { element: '#attendance-activity-container', popover: { title: 'Mark Attendance', description: 'Used to mark your attendance' } },
+    { popover: { title: "Tableau de bord", description: "Section du tableau de bord" } },
+    { element: '#attendance-activity-container', popover: { title: 'Pointage', description: "Utilisé pour permettre le pointage" } },
 ];
 
 if ($('#settingsMenu').length) {
-    steps.push({ element: '#settingsMenu', popover: { title: 'Settings', description: 'Settings configurations' } });
+    steps.push({ element: '#settingsMenu', popover: { title: "Paramètres", description: "Configurations des Paramètres" } });
 }
 
 if ($('#notificationIcon').length) {
-    steps.push({ element: '#notificationIcon', popover: { title: 'Notification', description: 'Notifications section' } });
+    steps.push({ element: '#notificationIcon', popover: { title: 'Notification', description: 'Section des notifications' } });
 }
 
 if ($('#multiLanguage').length) {
-    steps.push({ element: '#multiLanguage', popover: { title: 'Language', description: 'Multi-Language options' } });
+    steps.push({ element: '#multiLanguage', popover: { title: 'Langue', description: 'Options multilingues' } });
 }
 if ($('#multCompany').length) {
-    steps.push({ element: '#multCompany', popover: { title: 'Multi-Company', description: 'Multi-Company options' } });
+    steps.push({ element: '#multCompany', popover: { title: 'Multi-entreprises', description: 'Options multi-entreprises' } });
 }
 if ($('#mainNavProfile').length) {
-    steps.push({ element: '#mainNavProfile', popover: { title: 'Profile', description: 'Profile and change password options' } });
+    steps.push({ element: '#mainNavProfile', popover: { title: 'Profil', description: 'Options de profil et de changement de mot de passe' } });
 }
 if ($('.oh-card-dashboard').length) {
-    steps.push({ element: '#tileContainer .oh-card-dashboard:nth-child(1)', popover: { title: 'Dashboard Tiles', description: 'Welcome To Dashboard Tiles' } });
+    steps.push({ element: '#tileContainer .oh-card-dashboard:nth-child(1)', popover: { title: 'Vignettes du tableau de bord', description: "Vignettes du tableau de bord de l'application"} });
 }
 setTimeout(() => {
     if ($('.oh-btn-group').length) {
-        steps.push({ element: '.oh-btn-group:nth-child(1)', popover: { title: 'Dashboard Actions', description: 'Approve or Reject Options' } });
+        steps.push({ element: '.oh-btn-group:nth-child(1)', popover: { title: 'Actions du tableau de bord', description: "Options d'approbation ou de rejet" } });
     }
     if ($('#addAnnouncement').length) {
-        steps.push({ element: '#addAnnouncement', popover: { title: 'Add announcement', description: 'Create announcement from dashboard' } });
+        steps.push({ element: '#addAnnouncement', popover: { title: 'Ajouter une annonce', description: "Créer une annonce à partir du tableau de bord" } });
     }
     if ($('#quickActions').length) {
-        steps.push({ element: '#quickActions', popover: { title: 'Quick Actions', description: 'Create Quick Requests' } });
+        steps.push({ element: '#quickActions', popover: { title: 'Actions rapides', description: "Créer des demandes rapides" } });
     }
     if ($('.oh-sidebar__company').length) {
-        steps.push({ element: '.oh-sidebar__company:nth-child(1)', popover: { title: 'Company', description: 'Your current company access' } });
+        steps.push({ element: '.oh-sidebar__company:nth-child(1)', popover: { title: 'Entreprise', description: "Vos droits d'accès dans l'entreprise" } });
     }
     if ($('[data-id="dashboardNav"]').length) {
-        steps.push({ element: '[data-id="dashboardNav"]', popover: { title: 'App', description: 'Welcome To Hr Apps. eg Dashboard' } });
+        steps.push({ element: '[data-id="dashboardNav"]', popover: { title: 'App', description: 'Applications RH (ex. : Tableau de bord)' } });
     }
 }, 1000);
 driverObj = driver(
@@ -50,7 +50,7 @@ driverObj = driver(
     {
         showProgress: false,
         animate: true,
-        showButtons: ['next', 'previous', 'close'],
+        showButtons: ['suivant', 'précédent', 'fermer'],
         steps: steps,
 
 
