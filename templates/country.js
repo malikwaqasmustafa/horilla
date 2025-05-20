@@ -34,6 +34,7 @@ function sanitizeCountryName(countryName) {
     return countryName.replace(/'/g, "\\'");
 }
 
+
 // States
 var s_a = new Array();
 s_a[0] = "";
@@ -294,11 +295,8 @@ s_a[252] = "Bulawayo|Harare|ManicalandMashonaland Central|Mashonaland East|Masho
 
 
 function populateStates(countryElementId, stateElementId) {
-
     var selectedCountryIndex = document.getElementById(countryElementId).selectedIndex;
-
     var stateElement = document.getElementById(stateElementId);
-
     stateElement.length = 0; // Fixed by Julian Woods
     stateElement.options[0] = new Option('Select State', '');
     stateElement.selectedIndex = 0;
@@ -313,35 +311,41 @@ function populateStates(countryElementId, stateElementId) {
 function populateCountries(countryElementId, stateElementId) {
     var countryElement = document.getElementById(countryElementId);
     var value = countryElement?.value;
-    
+
     if (value != undefined) {
         // If there's a select2, destroy it first
         if ($(countryElement).data('select2')) {
             $(countryElement).select2('destroy');
         }
-        
+
         countryElement.length = 0;
         countryElement.options[0] = new Option('Select Country', '-1');
         countryElement.selectedIndex = 0;
-        
+
+        // Normalize the saved value to handle apostrophes correctly
+        var normalizedValue = unescapeHTML(value.trim());
+
         for (var i = 0; i < country_arr.length; i++) {
             var countryName = country_arr[i];
             var option = new Option(countryName, countryName);
             countryElement.options[countryElement.length] = option;
-            
-            if (value.trim() === countryName.trim()) {
+
+            // Normalize the country name for comparison
+            var normalizedCountryName = countryName.trim();
+
+            if (normalizedValue === normalizedCountryName) {
                 option.selected = true;
             }
         }
 
         // Reinitialize select2 after setting the value
-        $(countryElement).select2();
-        
+        //$(countryElement).select2();
+
         // Force select2 to update its display
         if (value && value !== '-1') {
             $(countryElement).val(value).trigger('change');
         }
-        
+
         countryElement.onchange = function () {
             populateStates(countryElementId, stateElementId);
         };
