@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %}
 
 <style>
 
@@ -118,7 +119,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horilla</title>
+    <title>Ev4ls</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{% if white_label_company.icon %}{{white_label_company.icon.url}} {% else %}{% static 'favicons/favicon-32x32.png' %}{% endif %}">
     <link rel="icon" type="image/png" sizes="16x16" href="{% if white_label_company.icon %}{{white_label_company.icon.url}} {% else %}{% static 'favicons/favicon-16x16.png' %}{% endif %}">
 </head>
@@ -131,10 +132,9 @@
             </div>
             <div>
                 <h1 class="hr-404">405</h1>
-                <p class="hr-error_msg">Method Not Allowed!</p>
-                <p>Oops! The request method is not allowed.<br>Please make sure you are sending a proper request.</p>
-                <a href="/" class="hr-error_btn"><ion-icon name="arrow-back-outline"></ion-icon>Return to the main
-                    page</a>
+                <p class="hr-error_msg">{% trans "Method Not Allowed!" %}</p>
+                <p>{% trans "Oops! The request method is not allowed." %}<br>{% trans "Please make sure you are sending a proper request." %}</p>
+                <a href="/" class="hr-error_btn"><ion-icon name="arrow-back-outline"></ion-icon>{% trans "Return to the main page" %}</a>
             </div>
         </div>
     </section>

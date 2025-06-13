@@ -118,7 +118,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horilla</title>
+    <title>Ev4ls</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{% if white_label_company.icon %}{{white_label_company.icon.url}} {% else %}{% static 'favicons/favicon-32x32.png' %}{% endif %}">
     <link rel="icon" type="image/png" sizes="16x16" href="{% if white_label_company.icon %}{{white_label_company.icon.url}} {% else %}{% static 'favicons/favicon-16x16.png' %}{% endif %}">
 </head>
@@ -131,10 +131,9 @@
             </div>
             <div>
                 <h1 class="hr-404">404</h1>
-                <p class="hr-error_msg">Page not found!</p>
-                <p>Oops! The page you are looking for could not be found.</p>
-                <a href="/" class="hr-error_btn"><ion-icon name="arrow-back-outline"></ion-icon>Return to the main
-                    page</a>
+                <p class="hr-error_msg">{% trans "Page not found!" %}</p>
+                <p>{% trans "Oops! The page you are looking for could not be found." %}</p>
+                <a href="/" class="hr-error_btn"><ion-icon name="arrow-back-outline"></ion-icon>{% trans "Return to the main page" %}</a>
             </div>
         </div>
     </section>
