@@ -208,9 +208,11 @@ class ModelForm(forms.ModelForm):
                 label = ""
                 if field.label is not None:
                     label = _(field.label.title())
+                existing_class = field.widget.attrs.get("class", "oh-input w-100")
                 field.widget.attrs.update(
-                    {"class": "oh-input w-100", "placeholder": label}
+                    {"class": f"{existing_class}", "placeholder": label}
                 )
+
             elif isinstance(widget, (forms.Select,)):
                 field.empty_label = None
                 if not isinstance(field, forms.ModelMultipleChoiceField):
@@ -245,8 +247,12 @@ class ModelForm(forms.ModelForm):
                 pass
 
             try:
-                self.fields["company_id"].initial = (
-                    request.user.employee_get.get_company
+                company_field = self.fields["company_id"]
+                company = request.user.employee_get.get_company
+                company_queryset = company_field.queryset
+
+                company_field.initial = (
+                    company if company in company_queryset else company_queryset.first()
                 )
             except:
                 pass
@@ -446,7 +452,7 @@ class CompanyForm(ModelForm):
 
         model = Company
         fields = "__all__"
-        excluded_fields = ["date_format", "time_format", "is_active"]
+        exclude = ["date_format", "time_format", "is_active"]
 
     def validate_image(self, file):
         max_size = 5 * 1024 * 1024
@@ -2386,6 +2392,9 @@ class AnnouncementForm(ModelForm):
         self.fields["attachments"] = MultipleFileField(label=_("Attachments"))
         self.fields["attachments"].required = False
         self.fields["description"].required = False
+        self.fields["disable_comments"].widget.attrs.update(
+            {"hx-on:click": "togglePublicComments()"}
+        )
 
     def save(self, commit: bool = ...) -> Any:
         attachement = []
@@ -2409,6 +2418,18 @@ class AnnouncementForm(ModelForm):
     def as_p(self, *args, **kwargs):
         context = {"form": self}
         return render_to_string("announcement/as_p.html", context)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if isinstance(self.fields["employees"], HorillaMultiSelectField):
+            self.errors.pop("employees", None)
+
+            employee_data = self.fields["employees"].queryset.filter(
+                id__in=self.data.getlist("employees")
+            )
+            cleaned_data["employees"] = employee_data
+
+        return cleaned_data
 
 
 class AnnouncementCommentForm(ModelForm):

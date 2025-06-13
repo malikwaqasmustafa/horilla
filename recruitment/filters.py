@@ -14,6 +14,7 @@ from base.filters import FilterSet
 from recruitment.models import (
     Candidate,
     InterviewSchedule,
+    LinkedInAccount,
     Recruitment,
     RecruitmentSurvey,
     SkillZone,
@@ -242,6 +243,7 @@ class RecruitmentFilter(FilterSet):
             "is_active",
             "is_published",
             "job_position_id",
+            "open_positions",
         ]
 
     def filter_by_name(self, queryset, _, value):
@@ -634,3 +636,25 @@ class InterviewFilter(FilterSet):
             # "candidate_rating__rating",
             # "candidate_interview__employee_id",
         ]
+
+
+class LinkedInAccountFilter(FilterSet):
+    """LinkedInAccount filter"""
+
+    search = django_filters.CharFilter(method="search_method")
+
+    class Meta:
+        model = LinkedInAccount
+        fields = ["username", "email", "company_id"]
+
+    def search_method(self, queryset, _, value: str):
+        """Method is used to search through LinkedInAccount"""
+        values = value.split(" ")
+        empty = queryset.model.objects.none()
+        for split in values:
+            empty = (
+                empty
+                | (queryset.filter(username__icontains=split))
+                | (queryset.filter(email__icontains=split))
+            )
+        return empty.distinct()

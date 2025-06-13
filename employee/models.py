@@ -16,6 +16,7 @@ from django.db import models
 from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.templatetags.static import static
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as trans
 
@@ -178,6 +179,17 @@ class Employee(models.Model):
         """
         return getattr(getattr(self, "employee_work_info", None), "shift_id", None)
 
+    def get_shift_schedule(self):
+        """
+        This method is used to check if the employee has a shift assigned
+        """
+        shift = self.get_shift()
+        day = datetime.today().strftime("%A").lower()
+        if not shift:
+            return None
+        schedule = shift.employeeshiftschedule_set.filter(day__day=day).first()
+        return schedule if schedule else None
+
     def get_mail(self):
         """
         This method is used to return the shift of the employee
@@ -212,17 +224,9 @@ class Employee(models.Model):
         )
 
     def get_avatar(self):
-        """
-        Method will retun the api to the avatar or path to the profile image
-        """
-        url = (
-            f"https://ui-avatars.com/api/?name={self.get_full_name()}&background=random"
-        )
-        if self.employee_profile:
-            full_filename = self.employee_profile.name
-            if default_storage.exists(full_filename):
-                url = self.employee_profile.url
-        return url
+        if self.employee_profile and default_storage.exists(self.employee_profile.name):
+            return self.employee_profile.url
+        return static("images/ui/default_avatar.jpg")
 
     def get_leave_status(self):
         """
@@ -562,13 +566,6 @@ class EmployeeWorkInformation(models.Model):
         related_name="employee_work_info",
         verbose_name=_("Employee"),
     )
-    job_position_id = models.ForeignKey(
-        JobPosition,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        verbose_name=_("Job Position"),
-    )
     department_id = models.ForeignKey(
         Department,
         on_delete=models.PROTECT,
@@ -576,19 +573,12 @@ class EmployeeWorkInformation(models.Model):
         blank=True,
         verbose_name=_("Department"),
     )
-    work_type_id = models.ForeignKey(
-        WorkType,
+    job_position_id = models.ForeignKey(
+        JobPosition,
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        verbose_name=_("Work Type"),
-    )
-    employee_type_id = models.ForeignKey(
-        EmployeeType,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        verbose_name=_("Employee Type"),
+        verbose_name=_("Job Position"),
     )
     job_role_id = models.ForeignKey(
         JobRole,
@@ -605,27 +595,6 @@ class EmployeeWorkInformation(models.Model):
         related_name="reporting_manager",
         verbose_name=_("Reporting Manager"),
     )
-    company_id = models.ForeignKey(
-        Company,
-        on_delete=models.PROTECT,
-        blank=True,
-        null=True,
-        verbose_name=_("Company"),
-    )
-    tags = models.ManyToManyField(
-        EmployeeTag, blank=True, verbose_name=_("Employee tag")
-    )
-    location = models.CharField(
-        max_length=50, null=True, blank=True, verbose_name=_("Work Location")
-    )
-    email = models.EmailField(
-        max_length=254, blank=True, null=True, verbose_name=_("Email")
-    )
-    mobile = models.CharField(
-        max_length=254,
-        blank=True,
-        null=True,
-    )
     shift_id = models.ForeignKey(
         EmployeeShift,
         on_delete=models.DO_NOTHING,
@@ -633,10 +602,47 @@ class EmployeeWorkInformation(models.Model):
         blank=True,
         verbose_name=_("Shift"),
     )
+    work_type_id = models.ForeignKey(
+        WorkType,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name=_("Work Type"),
+    )
+
+    employee_type_id = models.ForeignKey(
+        EmployeeType,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name=_("Employee Type"),
+    )
+    tags = models.ManyToManyField(
+        EmployeeTag, blank=True, verbose_name=_("Employee tag")
+    )
+    location = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name=_("Work Location")
+    )
+    company_id = models.ForeignKey(
+        Company,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        verbose_name=_("Company"),
+    )
+    email = models.EmailField(
+        max_length=254, blank=True, null=True, verbose_name=_("Work Email")
+    )
+    mobile = models.CharField(
+        max_length=254, blank=True, null=True, verbose_name=_("Work Phone")
+    )
+
     date_joining = models.DateField(
         null=True, blank=True, verbose_name=_("Joining Date")
     )
-    contract_end_date = models.DateField(blank=True, null=True)
+    contract_end_date = models.DateField(
+        blank=True, null=True, verbose_name=_("Contract End Date")
+    )
     basic_salary = models.IntegerField(
         null=True, blank=True, default=0, verbose_name=_("Basic Salary")
     )
@@ -707,16 +713,18 @@ class EmployeeBankDetails(HorillaModel):
     bank_name = models.CharField(max_length=50)
     account_number = models.CharField(
         max_length=50,
-        null=False,
+        null=True,
         blank=False,
         default="",
     )
-    branch = models.CharField(max_length=50)
-    address = models.TextField(max_length=255)
+    branch = models.CharField(max_length=50, null=True)
+    address = models.TextField(max_length=255, null=True)
     country = models.CharField(max_length=50, blank=True, null=True)
     state = models.CharField(max_length=50, blank=True)
     city = models.CharField(max_length=50, blank=True)
-    any_other_code1 = models.CharField(max_length=50, verbose_name="Bank Code #1")
+    any_other_code1 = models.CharField(
+        max_length=50, verbose_name="Bank Code #1", null=True
+    )
     any_other_code2 = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="Bank Code #2"
     )

@@ -49,6 +49,7 @@ from recruitment.models import (
     CandidateDocumentRequest,
     InterviewSchedule,
     JobPosition,
+    LinkedInAccount,
     Recruitment,
     RecruitmentSurvey,
     RejectedCandidate,
@@ -236,7 +237,10 @@ class RecruitmentCreationForm(ModelForm):
     #     label=_("Survey Templates"),
     #     required=False,
     # )
-
+    # linkedin_account_id = forms.ModelChoiceField(
+    #     queryset=LinkedInAccount.objects.filter(is_active=True)
+    #     label=_('')
+    # )
     class Meta:
         """
         Meta class to add the additional info
@@ -244,7 +248,7 @@ class RecruitmentCreationForm(ModelForm):
 
         model = Recruitment
         fields = "__all__"
-        exclude = ["is_active"]
+        exclude = ["is_active", "linkedin_post_id"]
         widgets = {
             "start_date": forms.DateInput(attrs={"type": "date"}),
             "end_date": forms.DateInput(attrs={"type": "date"}),
@@ -282,6 +286,12 @@ class RecruitmentCreationForm(ModelForm):
         )
         self.fields["skills"].choices = skill_choices
         self.fields["skills"].choices += [("create", _("Create new skill "))]
+        self.fields["linkedin_account_id"].queryset = LinkedInAccount.objects.filter(
+            is_active=True
+        )
+        self.fields["publish_in_linkedin"].widget.attrs.update(
+            {"onchange": "toggleLinkedIn()"}
+        )
 
     # def create_option(self, *args,**kwargs):
     #     option = super().create_option(*args,**kwargs)
@@ -301,6 +311,17 @@ class RecruitmentCreationForm(ModelForm):
         if is_published and not open_positions:
             raise forms.ValidationError(
                 _("Job position is required if the recruitment is publishing.")
+            )
+        if (
+            self.cleaned_data.get("publish_in_linkedin")
+            and not self.cleaned_data["linkedin_account_id"]
+        ):
+            raise forms.ValidationError(
+                {
+                    "linkedin_account_id": _(
+                        "LinkedIn account is required for publishing."
+                    )
+                }
             )
         super().clean()
 
@@ -1035,26 +1056,24 @@ class SkillZoneCandidateForm(ModelForm):
                 + self.instance.skill_zone_id.title
             )
 
-    def save(self, commit: bool = ...) -> Any:
-        super().save(commit)
-        other_candidates = list(
-            set(self.data.getlist("candidate_id"))
-            - {
-                str(self.instance.candidate_id.id),
-            }
-        )
-        if commit:
-            cand = self.instance
-            for id in other_candidates:
-                cand.pk = cand.pk + 1
-                cand.id = cand.pk
-                cand.candidate_id = Candidate.objects.get(id=id)
-                try:
-                    super(SkillZoneCandidate, cand).save()
-                except Exception as e:
-                    logger.error(e)
+    def save(self, commit: bool = True) -> SkillZoneCandidate:
 
-        return other_candidates
+        if not self.instance.pk:
+            candidates = Candidate.objects.filter(
+                id__in=list((self.data.getlist("candidate_id")))
+            )
+            skill_zone = self.cleaned_data["skill_zone_id"]
+            reason = self.cleaned_data["reason"]
+            for candidate in candidates:
+                zone_cand = SkillZoneCandidate()
+                zone_cand.skill_zone_id = skill_zone
+                zone_cand.candidate_id = candidate
+                zone_cand.reason = reason
+                zone_cand.save()
+        else:
+            instance = super().save()
+
+        return self.instance
 
 
 class ToSkillZoneForm(ModelForm):
@@ -1302,3 +1321,19 @@ class CandidateDocumentForm(ModelForm):
         context = {"form": self}
         table_html = render_to_string("common_form.html", context)
         return table_html
+
+
+class LinkedInAccountForm(BaseModelForm):
+    """
+    LinkedInAccount form
+    """
+
+    class Meta:
+        model = LinkedInAccount
+        fields = [
+            "username",
+            "email",
+            "api_token",
+            "is_active",
+            "company_id",
+        ]

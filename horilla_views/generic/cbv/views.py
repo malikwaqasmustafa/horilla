@@ -2,6 +2,7 @@
 horilla/generic/views.py
 """
 
+import io
 import json
 import logging
 from typing import Any
@@ -14,10 +15,12 @@ from django.core.cache import cache as CACHE
 from django.core.paginator import Page
 from django.http import HttpRequest, HttpResponse, QueryDict
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.urls import resolve, reverse
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, FormView, ListView, TemplateView
+from xhtml2pdf import pisa
 
 from base.methods import closest_numbers, eval_validate, get_key_instances
 from horilla.filters import FilterSet
@@ -25,6 +28,7 @@ from horilla.group_by import group_by_queryset
 from horilla.horilla_middlewares import _thread_locals
 from horilla_views import models
 from horilla_views.cbv_methods import (  # update_initial_cache,
+    export_xlsx,
     get_short_uuid,
     hx_request_required,
     paginator_qry,
@@ -48,7 +52,13 @@ class HorillaListView(ListView):
 
     view_id: str = """"""
 
-    export_file_name: str = None
+    export_file_name: str = "quick_export"
+    export_formats: list = [
+        ("xlsx", "Excel"),
+        ("json", "Json"),
+        ("csv", "CSV"),
+        ("pdf", "PDF"),
+    ]
 
     template_name: str = "generic/horilla_list_table.html"
     context_object_name = "queryset"
@@ -117,6 +127,7 @@ class HorillaListView(ListView):
         if not self.view_id:
             self.view_id = get_short_uuid(4)
         super().__init__(**kwargs)
+        self.ordered_ids_key = f"ordered_ids_{self.model.__name__.lower()}"
 
         request = getattr(_thread_locals, "request", None)
         self.request = request
@@ -389,8 +400,7 @@ class HorillaListView(ListView):
         if not self._saved_filters.get("field"):
             for instance in queryset:
                 ordered_ids.append(instance.pk)
-
-        self.request.session[f"ordered_ids_{self.model.__name__.lower()}"] = ordered_ids
+        self.request.session[self.ordered_ids_key] = ordered_ids
         context["queryset"] = paginator_qry(
             queryset, self._saved_filters.get("page"), self.records_per_page
         )
@@ -444,7 +454,7 @@ class HorillaListView(ListView):
             )
             context["bulk_update_fields"] = self.bulk_update_fields
             context["bulk_path"] = get_bulk_path
-
+        context["export_formats"] = self.export_formats
         return context
 
     def select_all(self, *args, **kwargs):
@@ -462,6 +472,7 @@ class HorillaListView(ListView):
         request = getattr(_thread_locals, "request", None)
         ids = eval_validate(request.POST["ids"])
         _columns = eval_validate(request.POST["columns"])
+        export_format = request.POST.get("format", "xlsx")
         queryset = self.model.objects.filter(id__in=ids)
 
         _model = self.model
@@ -488,19 +499,45 @@ class HorillaListView(ListView):
                 return instance.pk
 
             for field_tuple in _columns:
-                dynamic_fn_str = f"def dehydrate_{field_tuple[1]}(self, instance):return self.remove_extra_spaces(getattribute(instance, '{field_tuple[1]}'))"
+                dynamic_fn_str = f"def dehydrate_{field_tuple[1]}(self, instance):return self.remove_extra_spaces(getattribute(instance, '{field_tuple[1]}'),{field_tuple})"
                 exec(dynamic_fn_str)
                 dynamic_fn = locals()[f"dehydrate_{field_tuple[1]}"]
                 locals()[field_tuple[1]] = fields.Field(column_name=field_tuple[0])
 
-            def remove_extra_spaces(self, text):
+            def remove_extra_spaces(self, text, field_tuple):
                 """
-                Remove blank space but keep line breaks and add new lines for <li> tags.
+                Clean the text:
+                - If it's a <select> element, extract the selected option's value.
+                - If it's an <input> or <textarea>, extract its 'value'.
+                - Otherwise, remove blank spaces, keep line breaks, and handle <li> tags.
                 """
                 soup = BeautifulSoup(str(text), "html.parser")
+
+                # Handle <select> tag
+                select_tag = soup.find("select")
+                if select_tag:
+                    selected_option = select_tag.find("option", selected=True)
+                    if selected_option:
+                        return selected_option["value"]
+                    else:
+                        first_option = select_tag.find("option")
+                        return first_option["value"] if first_option else ""
+
+                # Handle <input> tag
+                input_tag = soup.find("input")
+                if input_tag:
+                    return input_tag.get("value", "")
+
+                # Handle <textarea> tag
+                textarea_tag = soup.find("textarea")
+                if textarea_tag:
+                    return textarea_tag.text.strip()
+
+                # Default: clean normal text and <li> handling
                 for li in soup.find_all("li"):
                     li.insert_before("\n")
                     li.unwrap()
+
                 text = soup.get_text()
                 lines = text.splitlines()
                 non_blank_lines = [line.strip() for line in lines if line.strip()]
@@ -512,15 +549,100 @@ class HorillaListView(ListView):
         # Export the data using the resource
         dataset = book_resource.export(queryset)
 
-        excel_data = dataset.export("xls")
+        # excel_data = dataset.export("xls")
 
         # Set the response headers
-        file_name = self.export_file_name
-        if not file_name:
-            file_name = "quick_export"
-        response = HttpResponse(excel_data, content_type="application/vnd.ms-excel")
-        response["Content-Disposition"] = f'attachment; filename="{file_name}.xls"'
-        return response
+        # file_name = self.export_file_name
+        # if not file_name:
+        #     file_name = "quick_export"
+        # response = HttpResponse(excel_data, content_type="application/vnd.ms-excel")
+        # response["Content-Disposition"] = f'attachment; filename="{file_name}.xls"'
+        # return response
+        json_data = json.loads(dataset.export("json"))
+        merged = []
+
+        for item in _columns:
+            # Check if item has exactly 2 elements
+            if len(item) == 2:
+                # Check if there's a matching (type, key) in export_fields (t, k, _)
+                match_found = any(
+                    export_item[0] == item[0] and export_item[1] == item[1]
+                    for export_item in self.export_fields
+                )
+
+                if match_found:
+                    # Find the first matching metadata or use {} as fallback
+                    try:
+                        metadata = next(
+                            (
+                                export_item[2]
+                                for export_item in self.export_fields
+                                if export_item[0] == item[0]
+                                and export_item[1] == item[1]
+                            ),
+                            {},
+                        )
+                    except Exception as e:
+                        merged.append(item)
+                        continue
+
+                    merged.append([*item, metadata])
+                else:
+                    merged.append(item)
+            else:
+                merged.append(item)
+        columns = []
+        for column in merged:
+            if len(column) >= 3 and isinstance(column[2], dict):
+                column = (column[0], column[0], column[2])
+            elif len(column) >= 3:
+                column = (column[0], column[1])
+            columns.append(column)
+
+        if export_format == "json":
+            response = HttpResponse(
+                json.dumps(json_data, indent=4), content_type="application/json"
+            )
+            response["Content-Disposition"] = (
+                f'attachment; filename="{self.export_file_name}.json"'
+            )
+            return response
+        # CSV
+        elif export_format == "csv":
+            csv_data = dataset.export("csv")
+            response = HttpResponse(csv_data, content_type="text/csv")
+            response["Content-Disposition"] = (
+                f'attachment; filename="{self.export_file_name}.csv"'
+            )
+            return response
+        elif export_format == "pdf":
+
+            headers = dataset.headers
+            rows = dataset.dict
+
+            # Render to HTML using a template
+            html_string = render_to_string(
+                "generic/export_pdf.html",
+                {
+                    "headers": headers,
+                    "rows": rows,
+                },
+            )
+
+            # Convert HTML to PDF using xhtml2pdf
+            result = io.BytesIO()
+            pisa_status = pisa.CreatePDF(html_string, dest=result)
+
+            if pisa_status.err:
+                return HttpResponse("PDF generation failed", status=500)
+
+            # Return response
+            response = HttpResponse(result.getvalue(), content_type="application/pdf")
+            response["Content-Disposition"] = (
+                f'attachment; filename="{self.export_file_name}.pdf"'
+            )
+            return response
+        return export_xlsx(json_data, columns)
 
 
 class HorillaSectionView(TemplateView):
@@ -596,15 +718,14 @@ class HorillaDetailedView(DetailView):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
+        self.ordered_ids_key = f"ordered_ids_{self.model.__name__.lower()}"
         request = getattr(_thread_locals, "request", None)
         self.request = request
         # update_initial_cache(request, CACHE, HorillaDetailedView)
 
     def get_context_data(self, **kwargs: Any):
         context = super().get_context_data(**kwargs)
-        instance_ids = self.request.session.get(
-            f"ordered_ids_{self.model.__name__.lower()}", []
-        )
+        instance_ids = self.request.session.get(self.ordered_ids_key, [])
         if not context.get("object", False):
             return context
 
@@ -726,6 +847,7 @@ class HorillaCardView(ListView):
         self.request = request
         # update_initial_cache(request, CACHE, HorillaCardView)
         self._saved_filters = QueryDict()
+        self.ordered_ids_key = f"ordered_ids_{self.model.__name__.lower()}"
 
     def get_queryset(self):
         if not self.queryset:
@@ -799,7 +921,7 @@ class HorillaCardView(ListView):
         if not self._saved_filters.get("field"):
             for instance in queryset:
                 ordered_ids.append(instance.pk)
-        self.request.session[f"ordered_ids_{self.model.__name__.lower()}"] = ordered_ids
+        self.request.session[self.ordered_ids_key] = ordered_ids
 
         # CACHE.get(self.request.session.session_key + "cbv")[HorillaCardView] = context
         referrer = self.request.GET.get("referrer", "")
@@ -914,6 +1036,7 @@ class HorillaFormView(FormView):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         request = getattr(_thread_locals, "request", None)
+        self.ordered_ids_key = f"ordered_ids_{self.model.__name__.lower()}"
         self.request = request
         if not self.success_url:
             self.success_url = self.request.path
@@ -963,9 +1086,7 @@ class HorillaFormView(FormView):
             pk = self.form.instance.pk
         # next/previous option in the forms
         if pk and self.request.GET.get(self.ids_key):
-            instance_ids = self.request.session.get(
-                f"ordered_ids_{self.model.__name__.lower()}", []
-            )
+            instance_ids = self.request.session.get(self.ordered_ids_key, [])
             url = resolve(self.request.path)
             key = list(url.kwargs.keys())[0]
             url_name = url.url_name
@@ -1205,6 +1326,7 @@ class HorillaProfileView(DetailView):
 
         request = getattr(_thread_locals, "request", None)
         self.request = request
+        self.ordered_ids_key = f"ordered_ids_{self.model.__name__.lower()}"
         # update_initial_cache(request, CACHE, HorillaProfileView)
 
         from horilla.urls import path, urlpatterns
@@ -1280,9 +1402,7 @@ class HorillaProfileView(DetailView):
         if active_tab:
             context["active_target"] = active_tab.tab_target
 
-        instance_ids = self.request.session.get(
-            f"ordered_ids_{self.model.__name__.lower()}", []
-        )
+        instance_ids = self.request.session.get(self.ordered_ids_key, [])
 
         if instance_ids:
             CACHE.set(
